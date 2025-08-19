@@ -1,0 +1,9 @@
+
+[workspace]
+members = [
+    "crates/core",
+    "crates/rpc-client",
+    "crates/db",
+    "crates/cli",
+    "crates/api",
+]
