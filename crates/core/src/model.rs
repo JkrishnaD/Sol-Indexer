@@ -163,3 +163,45 @@ impl TryFrom<yp::SubscribeUpdateBlock> for BlockUpdate {
         })
     }
 }
+
+pub enum Update {
+    Block(BlockUpdate),
+    Transaction(TransactionUpdate),
+    Account(AccountUpdate),
+}
+
+impl From<yp::SubscribeUpdate> for Update {
+    fn from(value: yp::SubscribeUpdate) -> Self {
+        match value.update_oneof {
+            Some(yp::subscribe_update::UpdateOneof::Block(b)) => {
+                Update::Block(BlockUpdate::try_from(b).expect("Failed to convert to BlockUpdate"))
+            }
+            Some(yp::subscribe_update::UpdateOneof::Transaction(t)) => Update::Transaction(
+                TransactionUpdate::try_from(t).expect("Failed to convert to TransactionUpdate"),
+            ),
+
+            Some(yp::subscribe_update::UpdateOneof::Account(a)) => Update::Account(
+                AccountUpdate::try_from(a).expect("Failed to convert to AccountUpdate"),
+            ),
+            Some(yp::subscribe_update::UpdateOneof::Slot(_)) => {
+                unimplemented!()
+            }
+            Some(yp::subscribe_update::UpdateOneof::TransactionStatus(_)) => {
+                unimplemented!()
+            }
+            Some(yp::subscribe_update::UpdateOneof::Ping(_)) => {
+                unimplemented!()
+            }
+            Some(yp::subscribe_update::UpdateOneof::Pong(_)) => {
+                unimplemented!()
+            }
+            Some(yp::subscribe_update::UpdateOneof::BlockMeta(_)) => {
+                unimplemented!()
+            }
+            Some(yp::subscribe_update::UpdateOneof::Entry(_)) => {
+                unimplemented!()
+            }
+            None => panic!("Empty SubscribeUpdate received"),
+        }
+    }
+}
