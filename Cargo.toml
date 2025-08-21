@@ -1,8 +1,9 @@
 
 [workspace]
+resolver = "2"
 members = [
     "crates/core",
-    "crates/rpc-client",
+    "crates/indexer",
     "crates/db",
     "crates/cli",
     "crates/api",
