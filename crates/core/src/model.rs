@@ -37,6 +37,26 @@ pub struct TransactionUpdateInfo {
     pub signature: Vec<u8>,
     pub is_vote: bool,
     pub index: u64,
+    pub meta: Option<TransactionMeta>,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct TransactionMeta {
+    pub fee: u64,
+    pub compute_units_consumed: Option<u64>,
+    pub pre_balances: Vec<u64>,
+    pub post_balances: Vec<u64>,
+    pub log_messages: Vec<String>,
+    pub pre_token_balance: Vec<TokenBalance>,
+    pub post_token_balance: Vec<TokenBalance>,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct TokenBalance {
+    pub account_index: u32,
+    pub mint: String,
+    pub owner: String,
+    pub program_id: String,
 }
 
 #[derive(Debug, Clone)]
@@ -48,9 +68,9 @@ pub struct AccountUpdate {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AccountInfo {
-    pub pubkey: Vec<u8>, // converted from Vec<u8>
+    pub pubkey: Vec<u8>,
     pub lamports: u64,
-    pub owner: Vec<u8>, // converted from Vec<u8>
+    pub owner: Vec<u8>,
     pub executable: bool,
     pub rent_epoch: u64,
     pub data: Vec<u8>,
@@ -108,6 +128,33 @@ impl TryFrom<yp::SubscribeUpdateTransaction> for TransactionUpdate {
                 index: tx.index,
                 is_vote: tx.is_vote,
                 signature: tx.signature,
+                meta: tx.meta.map(|meta| TransactionMeta {
+                    fee: meta.fee,
+                    log_messages: meta.log_messages,
+                    pre_balances: meta.pre_balances,
+                    compute_units_consumed: meta.compute_units_consumed,
+                    post_balances: meta.post_balances,
+                    post_token_balance: meta
+                        .post_token_balances
+                        .into_iter()
+                        .map(|tb| TokenBalance {
+                            account_index: tb.account_index,
+                            mint: tb.mint,
+                            owner: tb.owner,
+                            program_id: tb.program_id,
+                        })
+                        .collect(),
+                    pre_token_balance: meta
+                        .pre_token_balances
+                        .into_iter()
+                        .map(|tb| TokenBalance {
+                            account_index: tb.account_index,
+                            mint: tb.mint,
+                            owner: tb.owner,
+                            program_id: tb.program_id,
+                        })
+                        .collect(),
+                }),
             }),
         })
     }
@@ -130,6 +177,33 @@ impl TryFrom<yp::SubscribeUpdateBlock> for BlockUpdate {
                     index: tx.index,
                     is_vote: tx.is_vote,
                     signature: tx.signature,
+                    meta: tx.meta.map(|meta| TransactionMeta {
+                        fee: meta.fee,
+                        log_messages: meta.log_messages,
+                        pre_balances: meta.pre_balances,
+                        compute_units_consumed: meta.compute_units_consumed,
+                        post_balances: meta.post_balances,
+                        post_token_balance: meta
+                            .post_token_balances
+                            .into_iter()
+                            .map(|tb| TokenBalance {
+                                account_index: tb.account_index,
+                                mint: tb.mint,
+                                owner: tb.owner,
+                                program_id: tb.program_id,
+                            })
+                            .collect(),
+                        pre_token_balance: meta
+                            .pre_token_balances
+                            .into_iter()
+                            .map(|tb| TokenBalance {
+                                account_index: tb.account_index,
+                                mint: tb.mint,
+                                owner: tb.owner,
+                                program_id: tb.program_id,
+                            })
+                            .collect(),
+                    }),
                 })
                 .collect(),
             updated_account_count: value.updated_account_count,
