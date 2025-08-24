@@ -132,10 +132,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b0674a1ddeecb70197781e945de4b3b8ffb61fa939a5597bcf48503737663100"
 
 [[package]]
-name = "api"
-version = "0.1.0"
-
-[[package]]
 name = "arrayref"
 version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -469,8 +465,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "cli"
+name = "config"
 version = "0.1.0"
+dependencies = [
+ "dotenv",
+ "once_cell",
+]
 
 [[package]]
 name = "console_error_panic_hook"
@@ -503,10 +503,8 @@ name = "core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "async-trait",
  "bs58",
  "serde",
- "serde_json",
  "yellowstone-grpc-client",
  "yellowstone-grpc-proto",
 ]
@@ -983,6 +981,10 @@ dependencies = [
  "r-efi",
  "wasi 0.14.2+wasi-0.2.4",
 ]
+
+[[package]]
+name = "geyser-adapter"
+version = "0.1.0"
 
 [[package]]
 name = "gimli"
@@ -1644,6 +1646,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "processor"
+version = "0.1.0"
+
+[[package]]
 name = "prost"
 version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1833,6 +1839,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "redis-adapter"
+version = "0.1.0"
+
+[[package]]
 name = "redox_syscall"
 version = "0.5.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1883,10 +1893,6 @@ dependencies = [
  "untrusted",
  "windows-sys 0.52.0",
 ]
-
-[[package]]
-name = "rpc-client"
-version = "0.1.0"
 
 [[package]]
 name = "rustc-demangle"

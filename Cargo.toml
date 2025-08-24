@@ -3,8 +3,9 @@
 resolver = "2"
 members = [
     "crates/core",
-    "crates/indexer",
     "crates/db",
-    "crates/cli",
-    "crates/api",
+    "crates/config",
+    "crates/redis-adapter",
+    "crates/geyser-adapter",
+    "crates/processor",
 ]
