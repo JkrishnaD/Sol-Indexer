@@ -1,3 +1,4 @@
+use anyhow::{Error, Ok};
 use bs58::encode;
 use serde::{Deserialize, Serialize};
 use yellowstone_grpc_proto::prelude::{self as yp};
@@ -78,8 +79,16 @@ pub struct AccountInfo {
     pub txn_signature: Option<Vec<u8>>,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct SlotUpdate {
+    pub slot: u64,
+    pub parent: Option<u64>,
+    pub status: i32,
+    pub dead_error: Option<String>,
+}
+
 impl TryFrom<yp::SubscribeUpdateAccount> for AccountUpdate {
-    type Error = String;
+    type Error = Error;
 
     fn try_from(value: yp::SubscribeUpdateAccount) -> Result<Self, Self::Error> {
         Ok(AccountUpdate {
@@ -119,8 +128,7 @@ impl AccountInfo {
 }
 
 impl TryFrom<yp::SubscribeUpdateTransaction> for TransactionUpdate {
-    type Error = String;
-
+    type Error = Error;
     fn try_from(value: yp::SubscribeUpdateTransaction) -> Result<Self, Self::Error> {
         Ok(TransactionUpdate {
             slot: value.slot,
@@ -161,7 +169,7 @@ impl TryFrom<yp::SubscribeUpdateTransaction> for TransactionUpdate {
 }
 
 impl TryFrom<yp::SubscribeUpdateBlock> for BlockUpdate {
-    type Error = String;
+    type Error = Error;
 
     fn try_from(value: yp::SubscribeUpdateBlock) -> Result<Self, Self::Error> {
         Ok(BlockUpdate {
@@ -238,10 +246,40 @@ impl TryFrom<yp::SubscribeUpdateBlock> for BlockUpdate {
     }
 }
 
+impl TryFrom<yp::SubscribeUpdateEntry> for EntryUpdate {
+    type Error = Error;
+
+    fn try_from(value: yp::SubscribeUpdateEntry) -> Result<Self, Self::Error> {
+        Ok(EntryUpdate {
+            slot: value.slot,
+            hash: value.hash,
+            index: value.index,
+            num_hashes: value.num_hashes,
+            executed_transaction_count: value.executed_transaction_count,
+            starting_transaction_index: value.starting_transaction_index,
+        })
+    }
+}
+
+impl TryFrom<yp::SubscribeUpdateSlot> for SlotUpdate {
+    type Error = Error;
+
+    fn try_from(value: yp::SubscribeUpdateSlot) -> Result<Self, Self::Error> {
+        Ok(SlotUpdate {
+            slot: value.slot,
+            parent: value.parent,
+            status: value.status,
+            dead_error: value.dead_error,
+        })
+    }
+}
+
 pub enum Update {
     Block(BlockUpdate),
     Transaction(TransactionUpdate),
     Account(AccountUpdate),
+    Entry(EntryUpdate),
+    Slot(SlotUpdate),
 }
 
 impl From<yp::SubscribeUpdate> for Update {
@@ -253,12 +291,14 @@ impl From<yp::SubscribeUpdate> for Update {
             Some(yp::subscribe_update::UpdateOneof::Transaction(t)) => Update::Transaction(
                 TransactionUpdate::try_from(t).expect("Failed to convert to TransactionUpdate"),
             ),
-
             Some(yp::subscribe_update::UpdateOneof::Account(a)) => Update::Account(
                 AccountUpdate::try_from(a).expect("Failed to convert to AccountUpdate"),
             ),
-            Some(yp::subscribe_update::UpdateOneof::Slot(_)) => {
-                unimplemented!()
+            Some(yp::subscribe_update::UpdateOneof::Entry(e)) => {
+                Update::Entry(EntryUpdate::try_from(e).expect("Failed to convert to EntryUpdate"))
+            }
+            Some(yp::subscribe_update::UpdateOneof::Slot(s)) => {
+                Update::Slot(SlotUpdate::try_from(s).expect("Failed to convert to SlotUpdate"))
             }
             Some(yp::subscribe_update::UpdateOneof::TransactionStatus(_)) => {
                 unimplemented!()
@@ -270,9 +310,6 @@ impl From<yp::SubscribeUpdate> for Update {
                 unimplemented!()
             }
             Some(yp::subscribe_update::UpdateOneof::BlockMeta(_)) => {
-                unimplemented!()
-            }
-            Some(yp::subscribe_update::UpdateOneof::Entry(_)) => {
                 unimplemented!()
             }
             None => panic!("Empty SubscribeUpdate received"),
