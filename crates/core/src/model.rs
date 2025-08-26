@@ -53,6 +53,15 @@ pub struct TransactionMeta {
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct TransactionStatusUpdate {
+    pub slot: u64,
+    pub signature: Vec<u8>,
+    pub is_vote: bool,
+    pub index: u64,
+    pub err: Option<String>,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct TokenBalance {
     pub account_index: u32,
     pub mint: String,
@@ -274,12 +283,27 @@ impl TryFrom<yp::SubscribeUpdateSlot> for SlotUpdate {
     }
 }
 
+impl TryFrom<yp::SubscribeUpdateTransactionStatus> for TransactionStatusUpdate {
+    type Error = Error;
+
+    fn try_from(value: yp::SubscribeUpdateTransactionStatus) -> Result<Self, Self::Error> {
+        Ok(TransactionStatusUpdate {
+            slot: value.slot,
+            is_vote: value.is_vote,
+            signature: value.signature,
+            index: value.index,
+            err: None,
+        })
+    }
+}
+
 pub enum Update {
     Block(BlockUpdate),
     Transaction(TransactionUpdate),
     Account(AccountUpdate),
     Entry(EntryUpdate),
     Slot(SlotUpdate),
+    TransactionStatus(TransactionStatusUpdate),
 }
 
 impl From<yp::SubscribeUpdate> for Update {
@@ -300,8 +324,11 @@ impl From<yp::SubscribeUpdate> for Update {
             Some(yp::subscribe_update::UpdateOneof::Slot(s)) => {
                 Update::Slot(SlotUpdate::try_from(s).expect("Failed to convert to SlotUpdate"))
             }
-            Some(yp::subscribe_update::UpdateOneof::TransactionStatus(_)) => {
-                unimplemented!()
+            Some(yp::subscribe_update::UpdateOneof::TransactionStatus(ts)) => {
+                Update::TransactionStatus(
+                    TransactionStatusUpdate::try_from(ts)
+                        .expect("Failed to convert to TransactionStatusUpdate"),
+                )
             }
             Some(yp::subscribe_update::UpdateOneof::Ping(_)) => {
                 unimplemented!()
