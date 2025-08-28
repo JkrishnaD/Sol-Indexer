@@ -5,8 +5,7 @@ use serde::Deserialize;
 use yellowstone_grpc_proto::geyser::{
     SubscribeRequest, SubscribeRequestAccountsDataSlice, SubscribeRequestFilterAccounts,
     SubscribeRequestFilterAccountsFilter, SubscribeRequestFilterAccountsFilterMemcmp,
-    SubscribeRequestFilterBlocks, SubscribeRequestFilterSlots,
-    SubscribeRequestFilterTransactions,
+    SubscribeRequestFilterBlocks, SubscribeRequestFilterSlots, SubscribeRequestFilterTransactions,
     subscribe_request_filter_accounts_filter::Filter as AccountsFilterOneof,
     subscribe_request_filter_accounts_filter_memcmp::Data as MemcmpData,
 };
@@ -27,9 +26,22 @@ pub struct AccountMemcmp {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct Accounts {
+    pub accounts: Vec<String>,
+    pub owners: Vec<String>,
+    pub filters: Vec<AccountFilter>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct AccountFilter {
+    pub memcmp: Vec<AccountMemcmp>,
+    pub datasize: Option<u64>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct Filters {
     /// accounts to watch
-    pub accounts: Vec<String>,
+    pub accounts: Vec<Accounts>,
     /// owners to watch
     pub owners: Vec<String>,
 
@@ -47,7 +59,7 @@ pub struct Filters {
 
     /// slots to watch
     #[serde(default)]
-    pub include_slots:bool,
+    pub include_slots: bool,
 
     #[serde(default)]
     pub blocks_include_transactions: Option<bool>,
@@ -55,6 +67,10 @@ pub struct Filters {
     pub blocks_include_accounts: Option<bool>,
     #[serde(default)]
     pub blocks_include_entries: Option<bool>,
+
+    /// accounts to block from blocks
+    #[serde(default)]
+    pub block_accounts: Option<Vec<String>>,
 
     /// Whether to subscribe to transactions and how to filter them
     #[serde(default)]
@@ -72,33 +88,35 @@ impl Filters {
     pub fn to_subscribe_request(&self) -> SubscribeRequest {
         // Accounts
         let mut accounts: HashMap<String, SubscribeRequestFilterAccounts> = HashMap::new();
-        if !self.accounts.is_empty()
-            || !self.owners.is_empty()
-            || self.accounts_memcmp.is_empty()
-            || self.accounts_datasize.is_none()
-        {
+        for acc in &self.accounts {
             let mut filters = vec![];
-            if let Some(size) = self.accounts_datasize {
+
+            // add datasize if present
+            if let Some(size) = acc.filters.iter().filter_map(|f| f.datasize).next() {
                 filters.push(SubscribeRequestFilterAccountsFilter {
                     filter: Some(AccountsFilterOneof::Datasize(size)),
                 });
             }
 
-            for m in &self.accounts_memcmp {
-                filters.push(SubscribeRequestFilterAccountsFilter {
-                    filter: Some(AccountsFilterOneof::Memcmp(
-                        SubscribeRequestFilterAccountsFilterMemcmp {
-                            offset: m.offset,
-                            data: Some(MemcmpData::Base58(m.base58.clone())),
-                        },
-                    )),
-                });
+            // add memcmp filters
+            for f in &acc.filters {
+                for m in &f.memcmp {
+                    filters.push(SubscribeRequestFilterAccountsFilter {
+                        filter: Some(AccountsFilterOneof::Memcmp(
+                            SubscribeRequestFilterAccountsFilterMemcmp {
+                                offset: m.offset,
+                                data: Some(MemcmpData::Base58(m.base58.clone())),
+                            },
+                        )),
+                    });
+                }
             }
+
             accounts.insert(
                 "client".to_owned(),
                 SubscribeRequestFilterAccounts {
-                    account: self.accounts.clone(),
-                    owner: self.owners.clone(),
+                    account: acc.accounts.clone(),
+                    owner: acc.owners.clone(),     
                     filters,
                     nonempty_txn_signature: None,
                 },
@@ -121,12 +139,13 @@ impl Filters {
             );
         }
 
-        let mut blocks = HashMap::new();
+        // blocks
+        let mut blocks: HashMap<String, SubscribeRequestFilterBlocks> = HashMap::new();
         if self.include_blocks {
             blocks.insert(
                 "client".to_owned(),
                 SubscribeRequestFilterBlocks {
-                    account_include: vec![],
+                    account_include: self.block_accounts.clone().unwrap_or_default(),
                     include_accounts: self.blocks_include_accounts,
                     include_entries: self.blocks_include_entries,
                     include_transactions: self.blocks_include_transactions,
@@ -134,7 +153,7 @@ impl Filters {
             );
         }
 
-        let mut slots = HashMap::new();
+        let mut slots: HashMap<String, SubscribeRequestFilterSlots> = HashMap::new();
         if self.include_slots {
             slots.insert(
                 "client".to_owned(),

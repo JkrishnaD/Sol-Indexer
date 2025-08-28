@@ -1,0 +1,32 @@
+{
+  "accounts": [
+    {
+      "accounts": ["Vote111111111111111111111111111111111111111"],
+      "owners": ["TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"],
+      "filters": []
+    }
+  ],
+  "owners": ["TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"],
+  "accounts_memcmp": [],
+  "accounts_datasize": null,
+
+  "include_slots": false,
+  "include_blocks": false,
+  "blocks_include_transactions": false,
+  "blocks_include_accounts": false,
+  "blocks_include_entries": false,
+
+  "transactions": {
+    "vote": false,
+    "failed": true,
+    "account_include": ["MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr","TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"],
+    "account_exclude": [],
+    "account_required": []
+  },
+  "blocks": {
+    "account_include": ["MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"],
+    "include_transactions": true,
+    "include_accounts": false,
+    "include_entries": false
+  }
+}
