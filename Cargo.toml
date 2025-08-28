@@ -7,5 +7,4 @@ members = [
     "crates/config",
     "crates/redis-adapter",
     "crates/geyser-adapter",
-    "crates/processor",
 ]
