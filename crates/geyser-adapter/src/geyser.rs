@@ -63,12 +63,6 @@ pub async fn run_geyser<P: Publisher>(
                 break;
             }
         };
-
-        println!(
-            "Received update from geyser: {}",
-            format!("{:?}", msg).yellow()
-        );
-
         match msg.update_oneof {
             Some(UpdateOneof::Account(a)) => {
                 let update = AccountUpdate::try_from(a)

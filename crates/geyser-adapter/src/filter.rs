@@ -42,17 +42,6 @@ pub struct AccountFilter {
 pub struct Filters {
     /// accounts to watch
     pub accounts: Vec<Accounts>,
-    /// owners to watch
-    pub owners: Vec<String>,
-
-    /// optional memcmp for accounts
-    #[serde(default)]
-    pub accounts_memcmp: Vec<AccountMemcmp>,
-
-    /// optional data size for accounts
-    #[serde(default)]
-    pub accounts_datasize: Option<u64>,
-
     /// whether to subscribe blocks and which inclusions
     #[serde(default)]
     pub include_blocks: bool,
