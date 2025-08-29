@@ -1,4 +1,5 @@
 use diesel::prelude::*;
+use serde::{Deserialize, Serialize};
 
 #[derive(Queryable, Selectable, Debug)]
 #[diesel(table_name = crate::schema::transactions)]
@@ -18,7 +19,7 @@ pub struct Transaction {
     pub post_token_balances: Vec<Option<i64>>,
 }
 
-#[derive(Insertable, Debug)]
+#[derive(Insertable, Debug,Deserialize,Serialize)]
 #[diesel(table_name = crate::schema::transactions)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct NewTransaction {
