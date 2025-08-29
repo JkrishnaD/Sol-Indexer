@@ -1,41 +1,39 @@
 use anyhow::Result;
 use futures::StreamExt;
-use redis::{Client, RedisError};
+use redis::Client;
 
 // A trait for publishing messages to a channel
 #[async_trait::async_trait]
 pub trait Publisher: Send + Sync {
-    fn publisher(&self, channel: &str, payload: &[u8]) -> Result<(), anyhow::Error>;
+    async fn publisher(&self, channel: &str, payload: &[u8]) -> Result<(), anyhow::Error>;
 }
 
 #[async_trait::async_trait]
 pub trait Consumer: Send + Sync {
-    fn consumer(&self, channel: &str) -> Result<(), anyhow::Error>;
+    async fn consumer<F>(&self, channel: &str, handler: F) -> Result<(), anyhow::Error>
+    where
+        F: FnMut(String) -> Result<()> + Send + 'static;
 }
 
-pub struct RedisPublisher {
+pub struct Redis {
     pub client: Client,
 }
 
-pub struct RedisConsumer {
-    pub client: Client,
-}
-
-impl RedisPublisher {
+impl Redis {
     pub fn new(rpc_url: &str) -> Result<Self> {
         let client = Client::open(rpc_url)?;
         Ok(Self { client })
     }
 }
 
-impl RedisConsumer {
-    pub async fn consume<F>(&self, channel: &str, mut handler: F) -> Result<(), RedisError>
+#[async_trait::async_trait]
+impl Consumer for Redis {
+    async fn consumer<F>(&self, channel: &str, mut handler: F) -> Result<(), anyhow::Error>
     where
         F: FnMut(String) -> Result<()> + Send + 'static,
     {
-        let mut conn = self.client.get_async_pubsub().await.unwrap();
-
-        conn.subscribe(channel).await.unwrap();
+        let mut conn = self.client.get_async_pubsub().await?;
+        conn.subscribe(channel).await?;
         let mut msg_stream = conn.on_message();
 
         while let Some(msg) = msg_stream.next().await {
@@ -45,23 +43,25 @@ impl RedisConsumer {
                 eprintln!("Error handling message: {}", e);
             }
         }
+
         Ok(())
     }
 }
 
 #[async_trait::async_trait]
-impl Publisher for RedisPublisher {
-    fn publisher(&self, channel: &str, payload: &[u8]) -> Result<(), anyhow::Error> {
+impl Publisher for Redis {
+    async fn publisher(&self, channel: &str, payload: &[u8]) -> Result<(), anyhow::Error> {
         // getting a client connection
-        let mut connection = self.client.get_connection()?;
+        let mut connection = self.client.get_multiplexed_tokio_connection().await?;
         // converting the bytes which we get from the geyser into string
-        let payload_str = String::from_utf8(payload.to_vec());
+        let payload_str = String::from_utf8(payload.to_vec())?;
 
         // publishing the message which is the data to the respective channel
         redis::cmd("PUBLISH")
             .arg(channel)
-            .arg(payload_str.unwrap())
-            .exec(&mut connection)?;
+            .arg(payload_str)
+            .query_async::<()>(&mut connection).await?;
+
         Ok(())
     }
 }
