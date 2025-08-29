@@ -5,8 +5,8 @@ services:
     image: postgres:latest
     container_name: sol_indexer_db
     environment:
-      POSTGRES_USER: indexer
-      POSTGRES_PASSWORD: indexer_pwd
+      POSTGRES_USER: solana_user
+      POSTGRES_PASSWORD: secure_password
       POSTGRES_DB: indexer_db
     ports:
       - "5432:5432"
