@@ -70,7 +70,7 @@ pub async fn run_geyser<P: Publisher>(
                     .context("Failed to convert AccountUpdate")?;
                 let data = to_string(&update.info)?;
                 println!("Account data: {}", data.green());
-                publisher.publisher(CH_ACCOUNTS, data.as_bytes())?;
+                let _ = publisher.publisher(CH_ACCOUNTS, data.as_bytes()).await;
             }
             Some(UpdateOneof::Transaction(tx)) => {
                 let update = TransactionUpdate::try_from(tx)
@@ -78,14 +78,14 @@ pub async fn run_geyser<P: Publisher>(
                     .context("Failed to convert TransactionUpdate")?;
                 let data = to_string(&update)?;
                 println!("Received Transaction update {}", data.blue());
-                publisher.publisher(CH_TRANSACTIONS, data.as_bytes())?;
+                let _ = publisher.publisher(CH_TRANSACTIONS, data.as_bytes()).await;
             }
             Some(UpdateOneof::Slot(s)) => {
                 let update = SlotUpdate::try_from(s)
                     .map_err(|e| anyhow::anyhow!(e))
                     .context("Failed to convert SlotUpdate")?;
                 let data = to_string(&update)?;
-                publisher.publisher(CH_SLOTS, data.as_bytes())?;
+                let _ = publisher.publisher(CH_SLOTS, data.as_bytes()).await;
             }
             Some(UpdateOneof::Block(b)) => {
                 let update = BlockUpdate::try_from(b)
@@ -93,7 +93,7 @@ pub async fn run_geyser<P: Publisher>(
                     .context("Failed to convert BlockUpdate")?;
                 let data = to_string(&update)?;
                 println!("Received Block update {}", data.yellow());
-                publisher.publisher(CH_BLOCKS, data.as_bytes())?;
+                let _ = publisher.publisher(CH_BLOCKS, data.as_bytes()).await;
             }
             Some(UpdateOneof::Entry(e)) => {
                 println!("Received Entry update {:?}", format!("{:?}", e).cyan());
@@ -101,14 +101,14 @@ pub async fn run_geyser<P: Publisher>(
                     .map_err(|e| anyhow::anyhow!(e))
                     .context("Failed to convert EntryUpdate")?;
                 let data = to_string(&update)?;
-                publisher.publisher(CH_ENTRIES, data.as_bytes())?;
+                let _ = publisher.publisher(CH_ENTRIES, data.as_bytes()).await;
             }
             Some(UpdateOneof::TransactionStatus(ts)) => {
                 let update = TransactionStatusUpdate::try_from(ts)
                     .map_err(|e| anyhow::anyhow!(e))
                     .context("Failed to convert TransactionStatusUpdate")?;
                 let data = to_string(&update)?;
-                publisher.publisher(CH_TRANSACTION_STATUS, data.as_bytes())?;
+                let _ = publisher.publisher(CH_TRANSACTION_STATUS, data.as_bytes()).await;
             }
             Some(UpdateOneof::Ping(p)) => {
                 // Handle Ping update

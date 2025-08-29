@@ -2,7 +2,7 @@ use anyhow::Result;
 use config::CONFIG;
 use filter::Filters;
 use geyser::run_geyser;
-use redis_adapter::RedisPublisher;
+use redis_adapter::Redis;
 use rustls::crypto::{CryptoProvider, ring::default_provider};
 mod filter;
 mod geyser;
@@ -19,7 +19,6 @@ async fn main() -> Result<()> {
 
     let filters = Filters::from_file(filters_path)?;
 
-    let publisher = RedisPublisher::new(&redis_url)?;
-    run_geyser::<RedisPublisher>(rpc_url, x_token.clone(), &filters, publisher).await
-    
+    let publisher = Redis::new(&redis_url)?;
+    run_geyser::<Redis>(rpc_url, x_token.clone(), &filters, publisher).await
 }
