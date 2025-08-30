@@ -31,7 +31,7 @@ Solana Network → Geyser Adapter → Redis → Database Consumer → PostgreSQL
 
 - Rust 1.70+ and Cargo
 - Docker and Docker Compose
-- PostgreSQL client libraries (for compilation)
+- Diesel cli for database migrations
 
 ## Quick Start
 
